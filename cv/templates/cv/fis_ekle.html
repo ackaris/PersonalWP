@@ -1,0 +1,96 @@
+{% extends 'cv/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2>Yeni Muhasebe Fişi</h2>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    <fieldset class="mb-4 border p-3 rounded">
+      <legend>Fiş Bilgileri</legend>
+      {{ form.as_p }}
+    </fieldset>
+
+    <fieldset class="mb-4 border p-3 rounded">
+      <legend>Fiş Satırları</legend>
+
+      <!-- Başlık Satırı -->
+      <div class="row fw-bold mb-2">
+        <div class="col-md-3">Hesap</div>
+        <div class="col-md-3">Açıklama</div>
+        <div class="col-md-2">Borç</div>
+        <div class="col-md-2">Alacak</div>
+      </div>
+
+      {{ formset.management_form }}
+      {% for form in formset %}
+        <div class="row mb-2">
+          <div class="col-md-3">{{ form.hesap }}</div>
+          <div class="col-md-3">{{ form.aciklama }}</div>
+          <div class="col-md-2">{{ form.borc }}</div>
+          <div class="col-md-2">{{ form.alacak }}</div>
+        </div>
+      {% endfor %}
+    </fieldset>
+
+    <!-- Toplamlar -->
+    <div id="toplam-container" class="row mt-3 fw-bold text-success">
+  <div class="col-md-6 text-end" id="toplam-borc">Toplam Borç: 0.00</div>
+  <div class="col-md-6" id="toplam-alacak">Toplam Alacak: 0.00</div>
+</div>
+
+    <button type="submit" class="btn btn-success mt-3">Kaydet</button>
+    <script>
+document.addEventListener('DOMContentLoaded', function () {
+  function updateTotals() {
+    let borcInputs = document.querySelectorAll('input[name$="borc"]');
+    let alacakInputs = document.querySelectorAll('input[name$="alacak"]');
+
+    let toplamBorc = 0;
+    let toplamAlacak = 0;
+
+    borcInputs.forEach(input => {
+      toplamBorc += parseFloat(input.value) || 0;
+    });
+
+    alacakInputs.forEach(input => {
+      toplamAlacak += parseFloat(input.value) || 0;
+    });
+
+    // Güncelle
+    document.getElementById('toplam-borc').textContent = "Toplam Borç: " + toplamBorc.toFixed(2);
+    document.getElementById('toplam-alacak').textContent = "Toplam Alacak: " + toplamAlacak.toFixed(2);
+
+    let container = document.getElementById('toplam-container');
+
+    if (toplamBorc !== toplamAlacak) {
+      container.classList.remove('text-success');
+      container.classList.add('text-danger');
+    } else {
+      container.classList.remove('text-danger');
+      container.classList.add('text-success');
+    }
+  }
+
+  // Tüm borç/alacak inputlarını dinle
+  document.querySelectorAll('input[name$="borc"], input[name$="alacak"]').forEach(input => {
+    input.addEventListener('input', updateTotals);
+  });
+
+  // Sayfa ilk açıldığında da çalıştır
+  updateTotals();
+});
+</script>
+  </form>
+</div>
+<!-- Dinamik Toplam Alanı -->
+
+{% endblock %}
