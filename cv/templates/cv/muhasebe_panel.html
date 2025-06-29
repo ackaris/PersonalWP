@@ -1,0 +1,15 @@
+<!-- templates/cv/muhasebe_panel.html -->
+{% extends 'cv/base.html' %}
+
+{% block content %}
+<h2 class="mb-4">Muhasebe İşlemleri</h2>
+
+<div class="row justify-content-center">
+  <div class="col-md-4 d-grid gap-2 mb-3">
+    <a href="{% url 'hesap_listesi' %}" class="btn btn-outline-primary btn-lg">📘 Hesap Listesi</a>
+  </div>
+  <div class="col-md-4 d-grid gap-2 mb-3">
+    <a href="{% url 'fis_listesi' %}" class="btn btn-outline-success btn-lg">📄 Fiş Listesi</a>
+  </div>
+</div>
+{% endblock %}

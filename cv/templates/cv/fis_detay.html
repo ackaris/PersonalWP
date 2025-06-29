@@ -1,0 +1,44 @@
+{% extends 'cv/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2>Fiş Detayı</h2>
+
+  <div class="mb-4">
+    <p><strong>Tarih:</strong> {{ fis.tarih }}</p>
+    <p><strong>Açıklama:</strong> {{ fis.aciklama }}</p>
+    <p><strong>Belge No:</strong> {{ fis.belge_no }}</p>
+  </div>
+
+  <table class="table table-bordered">
+    <thead class="table-light">
+      <tr>
+        <th>Hesap</th>
+        <th>Açıklama</th>
+        <th>Borç</th>
+        <th>Alacak</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for hareket in hareketler %}
+      <tr>
+        <td>{{ hareket.hesap.kod }} - {{ hareket.hesap.ad }}</td>
+        <td>{{ hareket.aciklama }}</td>
+        <td>{{ hareket.borc|floatformat:2 }}</td>
+        <td>{{ hareket.alacak|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot class="fw-bold">
+      <tr>
+        <td colspan="2" class="text-end">Toplam:</td>
+        <td>{{ toplam_borc|floatformat:2 }}</td>
+        <td>{{ toplam_alacak|floatformat:2 }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <a href="{% url 'fis_listesi' %}" class="btn btn-secondary mt-3">← Geri Dön</a>
+</div>
+{% endblock %}

@@ -3,94 +3,138 @@
 
 {% block content %}
 <div class="container mt-5">
-  <h2>Yeni Muhasebe Fişi</h2>
-
+  <h2>{% if duzenleme_modu %}Fişi Düzenle{% else %}Yeni Muhasebe Fişi{% endif %}</h2>
+  {% if formset.non_form_errors %}
+  <div class="alert alert-danger">
+    {{ formset.non_form_errors }}
+  </div>
+{% endif %}
   {% if messages %}
     {% for message in messages %}
       <div class="alert alert-{{ message.tags }}">{{ message }}</div>
     {% endfor %}
   {% endif %}
 
-  <form method="post">
+  <form method="post" novalidate>
     {% csrf_token %}
 
-    <fieldset class="mb-4 border p-3 rounded">
-      <legend>Fiş Bilgileri</legend>
-      {{ form.as_p }}
-    </fieldset>
+    <div class="mb-3">
+      {{ form.tarih.label_tag }} {{ form.tarih }}
+    </div>
+    <div class="mb-3">
+      {{ form.aciklama.label_tag }} {{ form.aciklama }}
+    </div>
+    <div class="mb-3">
+      {{ form.belge_no.label_tag }} {{ form.belge_no }}
+    </div>
 
     <fieldset class="mb-4 border p-3 rounded">
       <legend>Fiş Satırları</legend>
 
-      <!-- Başlık Satırı -->
+      {{ formset.management_form }}
+
       <div class="row fw-bold mb-2">
         <div class="col-md-3">Hesap</div>
         <div class="col-md-3">Açıklama</div>
         <div class="col-md-2">Borç</div>
         <div class="col-md-2">Alacak</div>
+        <div class="col-md-2">Sil</div>
       </div>
 
-      {{ formset.management_form }}
-      {% for form in formset %}
-        <div class="row mb-2">
+      <div id="formset-area">
+        {% for form in formset %}
+        <div class="row mb-2 formset-row">
+          {% if duzenleme_modu %}
+    {{ form.id }}
+  {% endif %}
           <div class="col-md-3">{{ form.hesap }}</div>
           <div class="col-md-3">{{ form.aciklama }}</div>
           <div class="col-md-2">{{ form.borc }}</div>
           <div class="col-md-2">{{ form.alacak }}</div>
+          <div class="col-md-2">
+            {{ form.DELETE }}
+          </div>
         </div>
-      {% endfor %}
+        {% endfor %}
+      </div>
+
+      <button type="button" class="btn btn-outline-primary mt-2" id="add-row">+ Yeni Satır Ekle</button>
     </fieldset>
 
-    <!-- Toplamlar -->
     <div id="toplam-container" class="row mt-3 fw-bold text-success">
-  <div class="col-md-6 text-end" id="toplam-borc">Toplam Borç: 0.00</div>
-  <div class="col-md-6" id="toplam-alacak">Toplam Alacak: 0.00</div>
-</div>
+      <div class="col-md-6 text-end" id="toplam-borc">Toplam Borç: 0.00</div>
+      <div class="col-md-6" id="toplam-alacak">Toplam Alacak: 0.00</div>
+    </div>
 
-    <button type="submit" class="btn btn-success mt-3">Kaydet</button>
-    <script>
-document.addEventListener('DOMContentLoaded', function () {
-  function updateTotals() {
-    let borcInputs = document.querySelectorAll('input[name$="borc"]');
-    let alacakInputs = document.querySelectorAll('input[name$="alacak"]');
-
-    let toplamBorc = 0;
-    let toplamAlacak = 0;
-
-    borcInputs.forEach(input => {
-      toplamBorc += parseFloat(input.value) || 0;
-    });
-
-    alacakInputs.forEach(input => {
-      toplamAlacak += parseFloat(input.value) || 0;
-    });
-
-    // Güncelle
-    document.getElementById('toplam-borc').textContent = "Toplam Borç: " + toplamBorc.toFixed(2);
-    document.getElementById('toplam-alacak').textContent = "Toplam Alacak: " + toplamAlacak.toFixed(2);
-
-    let container = document.getElementById('toplam-container');
-
-    if (toplamBorc !== toplamAlacak) {
-      container.classList.remove('text-success');
-      container.classList.add('text-danger');
-    } else {
-      container.classList.remove('text-danger');
-      container.classList.add('text-success');
-    }
-  }
-
-  // Tüm borç/alacak inputlarını dinle
-  document.querySelectorAll('input[name$="borc"], input[name$="alacak"]').forEach(input => {
-    input.addEventListener('input', updateTotals);
-  });
-
-  // Sayfa ilk açıldığında da çalıştır
-  updateTotals();
-});
-</script>
+    <button type="submit" class="btn btn-success mt-4">
+      {% if duzenleme_modu %}Kaydet ve Güncelle{% else %}Kaydet{% endif %}
+    </button>
+    <a href="{% url 'fis_listesi' %}" class="btn btn-secondary mt-4">İptal</a>
   </form>
 </div>
-<!-- Dinamik Toplam Alanı -->
+{% endblock %}
 
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const formsetArea = document.getElementById('formset-area');
+    const totalFormsInput = document.getElementById('id_hareket-TOTAL_FORMS');
+    const addRowBtn = document.getElementById('add-row');
+
+    function updateTotals() {
+      let borc = 0;
+      let alacak = 0;
+
+      document.querySelectorAll('input[name$="-borc"]').forEach(input => {
+        borc += parseFloat(input.value) || 0;
+      });
+
+      document.querySelectorAll('input[name$="-alacak"]').forEach(input => {
+        alacak += parseFloat(input.value) || 0;
+      });
+
+      document.getElementById('toplam-borc').textContent = `Toplam Borç: ${borc.toFixed(2)}`;
+      document.getElementById('toplam-alacak').textContent = `Toplam Alacak: ${alacak.toFixed(2)}`;
+
+      const container = document.getElementById('toplam-container');
+      container.classList.toggle('text-danger', borc !== alacak);
+      container.classList.toggle('text-success', borc === alacak);
+    }
+
+    function addNewFormRow() {
+      const formCount = parseInt(totalFormsInput.value);
+      const template = formsetArea.querySelector('.formset-row');
+      const newRow = template.cloneNode(true);
+
+      newRow.querySelectorAll('input, select').forEach(el => {
+        if (el.name) {
+          el.name = el.name.replace(/hareket-(\d+)-/, `hareket-${formCount}-`);
+        }
+        if (el.id) {
+          el.id = el.id.replace(/hareket-(\d+)-/, `hareket-${formCount}-`);
+        }
+        if (el.type === 'checkbox') {
+          el.checked = false;
+        } else {
+          el.value = '';
+        }
+      });
+
+      formsetArea.appendChild(newRow);
+      totalFormsInput.value = formCount + 1;
+      attachEvents(newRow);
+      updateTotals();
+    }
+
+    function attachEvents(row) {
+      row.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('input', updateTotals);
+      });
+    }
+
+    document.querySelectorAll('.formset-row').forEach(row => attachEvents(row));
+    addRowBtn.addEventListener('click', addNewFormRow);
+    updateTotals();
+  });
+</script>
 {% endblock %}
